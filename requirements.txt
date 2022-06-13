@@ -1,5 +1,6 @@
 numpy>=1.17.4
-Pillow-SIMD
+anytree
+Pillow
 scikit-image
 tqdm
 simplejpeg
