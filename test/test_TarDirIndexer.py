@@ -1,6 +1,12 @@
+import os
+from pathlib import Path
 from unittest import TestCase
-from tar_dir_indexer.tarDirIndexer import ElementNode
+import warnings
 
+from tar_dir_indexer import ElementNode, TarDirIndexer
+
+if Path(os.getcwd()).name == 'test':
+    os.chdir('../')
 
 
 class TestElementNode(TestCase):
@@ -8,12 +14,22 @@ class TestElementNode(TestCase):
     def test_get_file_object(self):
         from simplejpeg import decode_jpeg
         with self.assertRaises(AssertionError):
-            ElementNode('file', 'data/IMG_0485.JPG')
+            ElementNode('file', 'test/data/IMG_0485.JPG')
 
         with self.assertRaises(AssertionError):
-            ElementNode('file', 'data/IMG_0485.JPG', parent=1)
+            ElementNode('file', 'test/ata/IMG_0485.JPG', parent=1)
 
+        e = ElementNode('file', 'IMG_0485.JPG', parent=ElementNode('root', 'test/data'))
+        with e.get_file_object() as ioobj:
+            self.assertEqual(decode_jpeg(ioobj.read()).shape, (4000, 6000, 3))
 
-        e = ElementNode('file', 'IMG_0485.JPG', parent= ElementNode('root', 'data'))
-        self.assertEqual(decode_jpeg(e.get_file_object().read()).shape, (4000,6000,3))
+class TestTarDirIndexer(TestCase):
 
+    def test__init__(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            d = TarDirIndexer('test/data')
+
+            self.assertEqual(22, len(d.index))
+            d.get_shapes()
+            self.assertEqual(d[-1].shape, (4000, 6000, 3))
