@@ -8,7 +8,6 @@ import numpy as np
 from skimage.io import imread
 import tifffile
 
-from jpegtran import JPEGImage
 from simplejpeg import decode_jpeg
 from tqdm import tqdm
 import typing
