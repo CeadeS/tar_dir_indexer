@@ -1,0 +1,8 @@
+numpy>=1.17.4
+Pillow-SIMD
+scikit-image
+tqdm
+simplejpeg
+
+
+
