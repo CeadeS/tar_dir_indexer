@@ -1,5 +1,4 @@
 import os
-import pathlib
 import pickle as pkl
 import tarfile
 import typing
@@ -14,17 +13,19 @@ from skimage.io import imread
 from tqdm import tqdm
 
 
-
 class ElementNode(Node):
     def __init__(self, node_type, name, dtype=None, parent=None, **kwargs):
 
         assert node_type in ['root', 'file', 'tar']
         if parent is None:
             p = Path(name)
-            assert p.is_file() and TarDirIndexer.get_file_type(open(p, 'rb')) == 'tar' or Path(
-                name).is_dir(), 'Name must be a directory or a tar file if no parent is specified'
+            if p.is_file():
+                with open(p, 'rb') as file:
+                    assert (TarDirIndexer.get_file_type(file) == 'tar') , 'Name must be a directory or a tar file if no parent is specified'
+            else:
+                assert Path(name).is_dir() , 'Name must be a directory or a tar file if no parent is specified'
         else:
-            assert isinstance(parent, ElementNode)
+            assert isinstance(parent, ElementNode) , "If a parent is set, it must be a Node"
         super().__init__(name, parent, **kwargs)
 
         self._type = node_type
@@ -82,6 +83,27 @@ class ElementNode(Node):
                 self.parent_file_object = self.parent.get_file_object()
                 return tarfile.TarFile(fileobj=self.parent_file_object).extractfile(self.name)
 
+    def get_data(self):
+        sample = None
+        if self.type == 'file':
+            with self.get_file_object() as fileobj:
+                if self.dtype == 'np':
+                    sample = np.load(fileobj)
+                elif self.dtype == 'pkl':
+                    sample = pkl.load(fileobj)
+                elif self.dtype == 'tiff':
+                    sample = tifffile.imread(fileobj)
+                elif self.dtype == 'jpeg':
+                    sample = decode_jpeg(fileobj.read())
+                elif self.dtype is not None:
+                    sample = imread(fileobj)
+                else:
+                    sample = fileobj.read()
+            if self.parent_file_object is not None:
+                self.parent_file_object.close()
+                pass
+        return sample
+
 
 class TarDirIndexer:
 
@@ -120,30 +142,8 @@ class TarDirIndexer:
         return 'file', None
 
     @staticmethod
-    def get_data(node):
-        sample = None
-        if node.type == 'file':
-            with node.get_file_object() as fileobj:
-                if node.dtype == 'np':
-                    sample = np.load(fileobj)
-                elif node.dtype == 'pkl':
-                    sample = pkl.load(fileobj)
-                elif node.dtype == 'tiff':
-                    sample = tifffile.imread(fileobj)
-                elif node.dtype == 'jpeg':
-                    sample = decode_jpeg(fileobj.read())
-                elif node.dtype is not None:
-                    sample = imread(fileobj)
-                else:
-                    sample = fileobj.read()
-            if node.parent_file_object is not None:
-                #node.parent_file_object.close()
-                pass
-        return sample
-
-    @staticmethod
     def get_shape(node):
-        sample = TarDirIndexer.get_data(node)
+        sample = node.get_data()
         if isinstance(sample, bytes):
             node.shape = len(sample)
         elif sample is not None:
@@ -205,4 +205,4 @@ class TarDirIndexer:
         return len(self.index)
 
     def __getitem__(self, idx):
-        return self.get_data(self.index[idx])
+        return self.index[idx].get_data()
