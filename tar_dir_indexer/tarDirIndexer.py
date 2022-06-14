@@ -150,7 +150,7 @@ class TarDirIndexer:
             node.shape = sample.shape
 
     def get_shapes(self):
-        for node in tqdm(self.index):
+        for node in tqdm(self.index, desc="Extracting Sample's shapes"):
             TarDirIndexer.get_shape(node)
 
     def get_shape_sorted_nodeslist(self):
@@ -199,7 +199,7 @@ class TarDirIndexer:
 
     def __str__(self):
         s = super(TarDirIndexer, self).__str__()
-        return s + '\n' + RenderTree(self.root, style=AsciiStyle()).by_attr()
+        return s + '\n' + RenderTree(self.root, style=AsciiStyle()).by_attr(lambda node: str(node.name)+ " dtype: " + str(node.dtype) + " shape: " + str(node.shape))
 
     def __len__(self):
         return len(self.index)
