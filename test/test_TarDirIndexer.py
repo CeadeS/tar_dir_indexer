@@ -29,7 +29,9 @@ class TestTarDirIndexer(TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             d = TarDirIndexer('test/data')
-
-            self.assertEqual(22, len(d.index))
+            self.assertEqual(len(str(d.index[4])), 53)
+            self.assertEqual(4, len(str(d.index[4].dtype)))
+            self.assertEqual(23, len(d.index))
             d.get_shapes()
             self.assertEqual(d[-1].shape, (4000, 6000, 3))
+            self.assertEqual(1858,len(str(d)))
